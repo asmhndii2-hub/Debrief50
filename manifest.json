@@ -1,11 +1,9 @@
 {
-  "name": "DebriefRoom",
-  "short_name": "DebriefRoom",
-  "description": "Train. Debrief. Master.",
-  "start_url": "./index.html",
+  "name": "Debrief50",
+  "short_name": "Debrief50",
+  "start_url": "./",
   "display": "standalone",
-  "background_color": "#0B1220",
-  "theme_color": "#0B1220",
-  "orientation": "portrait",
-  "icons": []
+  "background_color": "#08111f",
+  "theme_color": "#08111f",
+  "description": "Fixed 50-question EASA PPL exams."
 }
