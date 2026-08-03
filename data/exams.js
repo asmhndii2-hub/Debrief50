@@ -2,6 +2,7 @@ window.DEBRIEF50_EXAMS = {
   "communications": {
     "id": "communications",
     "title": "Communications",
+    "icon": "🎙️",
     "passMark": 75,
     "questions": [
       {
@@ -709,6 +710,7 @@ window.DEBRIEF50_EXAMS = {
   "air-law": {
     "id": "air-law",
     "title": "Air Law",
+    "icon": "⚖️",
     "passMark": 75,
     "questions": [
       {
@@ -944,9 +946,9 @@ window.DEBRIEF50_EXAMS = {
           "C": "Maintain its speed and heading.",
           "D": "Maintain its speed, heading and height."
         },
-        "correct": "A",
-        "explanation": "No explanation was supplied in the uploaded document.",
-        "examTrap": "",
+        "correct": "C",
+        "explanation": "Correct Answer: C — Maintain its speed and heading. Why: The aircraft that has right of way must remain predictable while the other aircraft manoeuvres to avoid it. Example Scenario: If another aircraft is converging from your left and you have right of way, continue at the same heading and speed while monitoring the other aircraft. Memory Trick: Right of way = stay predictable. Common Mistake: Adding height because it sounds safer; the rule tested here specifically requires maintaining heading and speed.",
+        "examTrap": "The exam may offer answers that include height. For this right-of-way rule, the required wording is heading and speed.",
         "needsReview": false
       },
       {
