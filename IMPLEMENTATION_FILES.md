@@ -1,13 +1,22 @@
-# Debrief50 implementation files
+# Operational Procedures integration
 
-Created/replaced for the simplified build:
+## Created
+
+- `data/operational-procedures.js`
+
+## Modified
 
 - `index.html`
-- `css/app.css`
-- `js/app.js`
 - `data/exams.js`
-- `manifest.json`
-- `README.md`
+- `js/app.js`
 - `tests/validate.js`
+- `README.md`
+- `IMPLEMENTATION_FILES.md`
 
-Existing copied question-bank files are intentionally not referenced by `index.html`, so they cannot appear in Debrief50.
+## Behaviour
+
+- Three subject cards are shown.
+- Operational Procedures immediately starts its supplied fixed 50-question exam.
+- Question order is shuffled at the start of every attempt.
+- A question's wording, choices, correct answer, explanation, review metadata, and visual reference remain one object and are never shuffled independently.
+- Answer choices remain in original A/B/C/D order.
