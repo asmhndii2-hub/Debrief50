@@ -1,0 +1,17 @@
+Debrief50 MockPrep All Source Mix Fix
+
+Apply to DEBRIEF50 ONLY; do not modify original DebriefRoom.
+
+Replace: js/app.js
+
+Fix:
+- In MockPrep > All, explicitly select approximately 70% per subject from the original bank, 30% from supplied 50-question papers.
+- Duplicate wording and IDs are avoided inside each attempt.
+- Questions remain bundled with original answer letters and choices.
+- 50s Only stays strictly restricted to the five fixed papers.
+- Result screen now shows Original bank / Fixed 50s source counts.
+- Clear warning if original-bank data is absent.
+
+The existing supplied mock-bank.js must remain in the repository and be loaded via index.html BEFORE js/app.js. No other files are replaced.
+
+If you resume an unfinished MockPrep, its existing question set remains unchanged. Start a new All attempt to see the corrected mix.
