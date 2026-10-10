@@ -29,17 +29,35 @@
     shell(`<section class="hero"><h1>MockPrep</h1><p>100 questions · 80% pass mark · Fully shuffled</p></section><section class="panel"><h2>Choose question bank</h2><div class="choice-grid"><button class="choice ${mockPool==='fixed'?'active':''}" data-pool="fixed"><strong>50s Only</strong><span>The five supplied 50-question papers</span></button><button class="choice ${mockPool==='all'?'active':''}" data-pool="all"><strong>All</strong><span>Fixed papers plus the original DebriefRoom question bank</span></button></div><h2>Time limit</h2><div class="choice-grid"><label class="radio-choice"><input type="radio" name="duration" value="0" checked> Untimed</label><label class="radio-choice"><input type="radio" name="duration" value="120"> 120 minutes</label></div><h2>Question distribution</h2><p class="muted-dark">Communications 20 · Air Law 28 · Operational Procedures 7 · AGK 20 · POF 25</p><button class="btn btn-primary" data-start-mock ${mockPool?'':'disabled'}>Start MockPrep</button>${saved&&saved.kind==='mock'&&!saved.finished?`<button class="btn btn-secondary" data-resume>Resume unfinished MockPrep (${esc(saved.pool==='all'?'All':'50s Only')})</button>`:''}</section>`);
   }
   function buildMock(pool) {
-    const history=safeLoad(HISTORY,{});const historyKey='mock-'+pool;const recent=history[historyKey]||[];
+    const history=safeLoad(HISTORY,{}), recent=history['mock-'+pool]||[];
     const picked=[], usedText=new Set(),usedIds=new Set();
-    for(const [subject,count] of Object.entries(TARGET)){
-      const fixed=(exams[subject]?.questions||[]).map(q=>copyQuestion(q,subject));
-      const original=pool==='all'?(bank[subject]||[]).map(q=>copyQuestion(q,subject)):[];
-      const candidates=shuffled([...fixed,...original]).sort((a,b)=>recent.indexOf(a.id)-recent.indexOf(b.id));
-      // Never choose duplicate question wording or IDs within a mock; avoid recently used questions.
-      let eligible=candidates.filter(q=>!usedIds.has(q.id)&&!usedText.has(signature(q)));
-      if(eligible.length<count)throw new Error(`${named(subject)}: only ${eligible.length} unique questions, need ${count}.`);
-      // -1 (unseen) sorts before 0 (oldest history); keep new candidates randomized within groups.
-      for(const q of eligible.slice(0,count)) {picked.push(q);usedIds.add(q.id);usedText.add(signature(q));}
+    const rank = q => {const i=recent.lastIndexOf(q.id);return i<0?-1:i;};
+    // Shuffle before ranking to vary ties, but prefer unseen/least recently used items.
+    function ordered(questions) {return shuffled(questions).sort((a,b)=>rank(a)-rank(b));}
+    function take(candidates,number) {
+      let taken=0;
+      for(const q of ordered(candidates)) {
+        if(taken>=number)break;
+        const sig=signature(q);
+        if(!sig||usedIds.has(q.id)||usedText.has(sig))continue;
+        picked.push(q);usedIds.add(q.id);usedText.add(sig);taken++;
+      }
+      return taken;
+    }
+    for(const [subject,count] of Object.entries(TARGET)) {
+      const fixed=(exams[subject]?.questions||[]).map(q=>({...copyQuestion(q,subject),sourceBank:'fixed'}));
+      const original=pool==='all'?(bank[subject]||[]).map(q=>({...copyQuestion(q,subject),sourceBank:'original'})):[];
+      if(pool==='all' && !original.length)throw new Error(`${named(subject)}: original bank not loaded. Check data/mock-bank.js and refresh the site.`);
+      const before=picked.length;
+      if(pool==='all') {
+        // Deliberately include original-bank questions: approx. 70% per subject.
+        const requestedOriginal=Math.ceil(count*0.70);
+        take(original,requestedOriginal);
+        take(fixed,count-(picked.length-before));
+        // Fill any shortage from the combined pool while retaining per-subject quotas.
+        take([...original,...fixed],count-(picked.length-before));
+      } else take(fixed,count);
+      if(picked.length-before!==count)throw new Error(`${named(subject)}: insufficient unique questions (${picked.length-before}/${count}).`);
     }
     return shuffled(picked);
   }
@@ -87,10 +105,12 @@
       const k='mock-'+state.pool,history=safeLoad(HISTORY,{});const merged=[...(history[k]||[]),...state.questions.map(q=>q.id)];history[k]=merged.slice(-1600);safeSave(HISTORY,history);try{localStorage.removeItem(STORAGE);}catch{}
     }
     const passMark=state.kind==='mock'?80:exams[state.subject].passMark,percent=(correct*100/total),passed=percent>=passMark;
+    const bankCounts=state.kind==='mock' ? state.questions.reduce((counts,q)=>{counts[q.sourceBank==='original'?'original':'fixed']++;return counts;},{original:0,fixed:0}) : null;
+    const sourceDetails=state.kind==='mock'?`<p class="muted-dark"><strong>Question sources:</strong> Original bank ${bankCounts.original} · Fixed 50s ${bankCounts.fixed}</p>`:'';
     const breakdown=state.kind==='mock'?`<h2>Subject performance</h2><div class="subject-results">${Object.entries(TARGET).map(([key])=>{const v=bySubject[key]||{correct:0,total:0};return `<div><span>${esc(named(key))}</span><strong>${v.correct}/${v.total} · ${v.total?Math.round(v.correct/v.total*100):0}%</strong></div>`;}).join('')}</div>`:'';
     const ordered=Object.entries(bySubject).sort((a,b)=>a[1].correct/a[1].total-b[1].correct/b[1].total);
     const insights=state.kind==='mock'?`<p class="muted-dark"><strong>Improve first:</strong> ${esc(named(ordered[0][0]))} · <strong>Strongest:</strong> ${esc(named(ordered[ordered.length-1][0]))}</p>`:'';
-    shell(`<section class="panel"><div class="result-hero"><div class="subject-pill" style="display:inline-block">${esc(state.kind==='mock'?'MockPrep':named(state.subject))}</div><h1 class="score ${passed?'pass':'fail'}">${correct}/${total}</h1><h2 class="${passed?'pass':'fail'}">${passed?'Pass':'Fail'} · ${percent.toFixed(1)}%</h2>${expired?'<p>Time expired — exam submitted automatically.</p>':''}</div><div class="stats"><div class="stat"><strong>${correct}</strong>Correct</div><div class="stat"><strong>${total-correct}</strong>Incorrect / unanswered</div><div class="stat"><strong>${passMark}%</strong>Pass mark</div></div>${breakdown}${insights}<h2>${wrong.length?'Questions to review':'Perfect score'}</h2><div class="review-list">${wrong.map(({q,index,chosen})=>`<article class="review"><h3>Q${index+1} · ${esc(named(q.subject))}: ${esc(q.question)}</h3>${q.image?`<img class="question-image" src="${esc(q.image)}" alt="Question illustration">`:''}<div class="answer-line wrong-answer"><strong>Your answer:</strong> ${chosen?esc(chosen+'. '+q.options[chosen]):'Unanswered'}</div><div class="answer-line right-answer"><strong>Correct answer:</strong> ${esc(q.correct+'. '+q.options[q.correct])}</div></article>`).join('')}</div><div class="actions"><button class="btn btn-primary" data-restart>Retake</button><button class="btn btn-secondary" data-home>Return to subjects</button></div></section>`);
+    shell(`<section class="panel"><div class="result-hero"><div class="subject-pill" style="display:inline-block">${esc(state.kind==='mock'?'MockPrep':named(state.subject))}</div><h1 class="score ${passed?'pass':'fail'}">${correct}/${total}</h1><h2 class="${passed?'pass':'fail'}">${passed?'Pass':'Fail'} · ${percent.toFixed(1)}%</h2>${expired?'<p>Time expired — exam submitted automatically.</p>':''}</div><div class="stats"><div class="stat"><strong>${correct}</strong>Correct</div><div class="stat"><strong>${total-correct}</strong>Incorrect / unanswered</div><div class="stat"><strong>${passMark}%</strong>Pass mark</div></div>${sourceDetails}${breakdown}${insights}<h2>${wrong.length?'Questions to review':'Perfect score'}</h2><div class="review-list">${wrong.map(({q,index,chosen})=>`<article class="review"><h3>Q${index+1} · ${esc(named(q.subject))}: ${esc(q.question)}</h3>${q.image?`<img class="question-image" src="${esc(q.image)}" alt="Question illustration">`:''}<div class="answer-line wrong-answer"><strong>Your answer:</strong> ${chosen?esc(chosen+'. '+q.options[chosen]):'Unanswered'}</div><div class="answer-line right-answer"><strong>Correct answer:</strong> ${esc(q.correct+'. '+q.options[q.correct])}</div></article>`).join('')}</div><div class="actions"><button class="btn btn-primary" data-restart>Retake</button><button class="btn btn-secondary" data-home>Return to subjects</button></div></section>`);
   }
   app.addEventListener('click',ev=>{
     const b=ev.target.closest('button');if(!b)return;
