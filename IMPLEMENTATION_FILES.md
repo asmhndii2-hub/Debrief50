@@ -1,12 +1,3 @@
-# Implementation Files
-
-Add:
-- data/principles-of-flight.js
-
-Replace:
-- index.html
-- tests/validate.js
-
-After overlaying this patch onto the current Debrief50 repository, the site contains 5 fixed exams / 250 questions.
-
-Do not apply this patch to the original DebriefRoom project.
+Modified: index.html, js/app.js, css/app.css, tests/validate.js, README.md
+Added: data/mock-bank.js and referenced assets/ images.
+Existing fixed-exam files remain unchanged: data/exams.js, data/operational-procedures.js, data/aircraft-general-knowledge.js, data/principles-of-flight.js.
